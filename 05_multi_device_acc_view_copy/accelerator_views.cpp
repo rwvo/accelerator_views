@@ -43,6 +43,7 @@ std::vector<int> get_devices(const std::vector<hc::accelerator>& accelerators){
   return devices;
 }
 
+
 int main(){
   float tm;
   {
@@ -80,12 +81,19 @@ int main(){
 
     std::wcerr << "Copying from host -> device " << devno1 << " -> device " << devno2 << " -> host:\n";
     
-    SHOW_TIME(acc_view1.copy_async(host_data1.data(), device_data1.accelerator_pointer(), size * sizeof(double)).wait());
+    SHOW_TIME(acc_view1.copy_async(host_data1.data(), device_data1.accelerator_pointer(), size * sizeof(double)));
     // SHOW_TIME(acc_view1.copy_async(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
-    //                                size * sizeof(double)).wait());
-    SHOW_TIME(acc_view1.copy_async_ext(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
-				       size * sizeof(double), hcMemcpyDeviceToDevice,
-				       devPtrInfo1, devPtrInfo2, &acc1).wait());
+    //                                size * sizeof(double)));
+    SHOW_TIME(acc_view1.wait());
+    try {
+      SHOW_TIME(acc_view1.copy_async_ext(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
+					 size * sizeof(double), hcMemcpyDeviceToDevice,
+					 devPtrInfo1, devPtrInfo2, &acc1));
+      SHOW_TIME(acc_view1.wait());
+    }
+    catch(std::exception& e){
+      std::cerr << "Exception caught: " << e.what() << '\n';
+    }
     SHOW_TIME(acc_view2.copy_async(device_data2.accelerator_pointer(), host_data2.data(), size * sizeof(double)).wait());
     
     auto average2 = std::accumulate(host_data2.begin(), host_data2.end(), 0.0) / size;
