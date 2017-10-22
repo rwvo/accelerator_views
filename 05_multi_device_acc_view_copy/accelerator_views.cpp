@@ -75,31 +75,14 @@ int main(){
     auto device_data1 = hc::array<double, 1>(extent<1>(size), acc_view1, device_ptr1);
     auto device_data2 = hc::array<double, 1>(extent<1>(size), acc_view2, device_ptr2);
 
-    std::wcerr << "device_ptr1: " << (void*)device_ptr1 << '\n';
-    std::wcerr << "device_ptr2: " << (void*)device_ptr2 << '\n';
-
-    hc::AmPointerInfo devPtrInfo1(NULL, NULL, NULL, 0, default_acc, 0, 0);
-    hc::AmPointerInfo devPtrInfo2(NULL, NULL, NULL, 0, default_acc, 0, 0);
-    bool inTracker1 = hc::am_memtracker_getinfo(&devPtrInfo1, device_ptr1) == AM_SUCCESS;
-    bool inTracker2 = hc::am_memtracker_getinfo(&devPtrInfo2, device_ptr2) == AM_SUCCESS;
-
-    std::wcerr << "inTracker1: " << inTracker1 << ", inTracker2: " << inTracker2 << "\n";
+    bool mapping_succeeded = (hc::am_map_to_peers(device_ptr2, 1, &acc1) == AM_SUCCESS);
+    std::wcerr << "Mapping succeeded: " << mapping_succeeded << '\n';
 
     std::wcerr << "Copying from host -> device " << devno1 << " -> device " << devno2 << " -> host:\n";
     
-    SHOW_TIME(acc_view1.copy_async(host_data1.data(), device_data1.accelerator_pointer(), size * sizeof(double)));
-    // SHOW_TIME(acc_view1.copy_async(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
-    //                                size * sizeof(double)));
-    SHOW_TIME(acc_view1.wait());
-    try {
-      SHOW_TIME(acc_view1.copy_ext(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
-				   size * sizeof(double), hcMemcpyDeviceToDevice,
-				   devPtrInfo1, devPtrInfo2, &acc1, false));
-      SHOW_TIME(acc_view1.wait());
-    }
-    catch(std::exception& e){
-      std::cerr << "Exception caught: " << e.what() << '\n';
-    }
+    SHOW_TIME(acc_view1.copy_async(host_data1.data(), device_data1.accelerator_pointer(), size * sizeof(double)).wait());
+    SHOW_TIME(acc_view1.copy_async(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
+                                   size * sizeof(double)).wait());
     SHOW_TIME(acc_view2.copy_async(device_data2.accelerator_pointer(), host_data2.data(), size * sizeof(double)).wait());
     
     auto average2 = std::accumulate(host_data2.begin(), host_data2.end(), 0.0) / size;
