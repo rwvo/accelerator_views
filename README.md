@@ -1,7 +1,7 @@
 ## hc::accelerator_view, overlapping transfers and computation, device-to-device DMA transfers.
 ### Initial experiments.
 
-Messy code lives here. Code will be sanitized and commented soon.
+Messy code lives here, full with traces of earlier version, unused variable, etc. Code will be sanitized and commented soon.
 
 ### Some quick observations
 
@@ -19,7 +19,7 @@ Messy code lives here. Code will be sanitized and commented soon.
   you'd only have to `wait()` on the last copy before processing the results on the host. You can either `wait()` on the
   `completion_future` returned from the `copy_async`, or on the `accelerator_view` itself.
 
-* Unlike the global `hc::copy_async``, the member function `accelerator_view::copy_async` requires that both the source
+* Unlike the global `hc::copy_async`, the member function `accelerator_view::copy_async` requires that both the source
   and the target pointer are allocated with `am_alloc`. Big shout-out to Scott Moe for discovering that! That's somewhat
   unfortunate if you want to use `hc::array` to represent data on the device. Fortunately, there is an ``hc::array``
   constructor that takes a raw pointer to already `am_alloc`-ed memory, as is shown in the code examples. Unfortunately,
@@ -31,9 +31,11 @@ Messy code lives here. Code will be sanitized and commented soon.
 
 ### Overlapping transfers/computations on two accelerator_views
 
-See code under [04_multi_acc_view_copy]. Creates two accelerator_views, copies data (all zeros) to both of them, does a
-whole lot of computation (on both queueus) resulting in all 1.0 values in both arrays on the device, copies the results
-back, and checks that the average value is 1.0 indeed for both vectors on the host.
+See code under
+[04_multi_acc_view_copy](https://github.com/rwvo/accelerator_views/blob/master/04_multi_acc_view_copy/accelerator_views.cpp). Creates
+two accelerator_views, copies data (all zeros) to both of them, does a whole lot of computation (on both queueus)
+resulting in all 1.0 values in both arrays on the device, copies the results back, and checks that the average value is
+1.0 indeed for both vectors on the host.
 
 Commenting out the `acc_view1.wait()` between the work on the two queues results in a total time for sequential execution.
 
@@ -42,9 +44,11 @@ overlap of two independent transfer-compute-transfer sequences.
 
 ### DMA transfers between two GPU devices.
 
-See code under [05_multi_device_acc_view_copy]. The magic for avoiding segfault/core dumps is a call to
-`hc::am_map_to_peers`. First arg: device pointer that is to be mapped to other accelerators. Third arg: pointer/array of
-`hc::accelerators` to which the pointer needs to be mapped. Second arg: number of accelerators in third arg.
+See code under
+[05_multi_device_acc_view_copy](https://github.com/rwvo/accelerator_views/blob/master/05_multi_device_acc_view_copy/accelerator_views.cpp). The
+magic for avoiding segfault/core dumps is a call to `hc::am_map_to_peers`. First arg: device pointer that is to be
+mapped to other accelerators. Third arg: pointer/array of `hc::accelerators` to which the pointer needs to be
+mapped. Second arg: number of accelerators in third arg.
 
 Fill host array with multiple copies of Pi, copy to device 1, copy from device 1 to device 2, copy from device 2 to
 host, check that the average value in the resulting host array is still Pi.
