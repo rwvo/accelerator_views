@@ -59,10 +59,12 @@ int main(){
     
     SHOW_TIME(acc_view1.copy_async(host_data1.data(), device_data1.accelerator_pointer(), size * sizeof(double)));
     SHOW_TIME(busywork(device_data1, 1, 0.0, 1.0));
-    auto marker1 = acc_view1.create_marker();
     SHOW_TIME(acc_view1.copy_async(device_data1.accelerator_pointer(), host_data1.data(), size * sizeof(double)));
 
-    // SHOW_TIME(marker1.wait());
+    // uncomment to see what the total time is for doing the work on both accelerator_views
+    // sequentially.
+    // acc_view1.wait();
+    
     SHOW_TIME(acc_view2.copy_async(host_data2.data(), device_data2.accelerator_pointer(), size * sizeof(double)));
     SHOW_TIME(busywork(device_data2, 1, 0.0, 1.0));
     SHOW_TIME(acc_view2.copy_async(device_data2.accelerator_pointer(), host_data2.data(), size * sizeof(double)));
