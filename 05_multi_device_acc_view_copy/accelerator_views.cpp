@@ -60,9 +60,11 @@ int main(){
 
     auto devno1 = devices.front();
     auto devno2 = devices.back();
-    
+
+    auto acc0 = accelerators[0];
     auto acc1 = accelerators[devno1];
     auto acc2 = accelerators[devno2];
+    auto acc_view0 = acc0.create_view();
     auto acc_view1 = acc1.create_view();
     auto acc_view2 = acc2.create_view();
     
@@ -72,6 +74,9 @@ int main(){
     auto device_ptr2 = hc::am_alloc(size * sizeof(double), acc2, 0);
     auto device_data1 = hc::array<double, 1>(extent<1>(size), acc_view1, device_ptr1);
     auto device_data2 = hc::array<double, 1>(extent<1>(size), acc_view2, device_ptr2);
+
+    std::wcerr << "device_ptr1: " << (void*)device_ptr1 << '\n';
+    std::wcerr << "device_ptr2: " << (void*)device_ptr2 << '\n';
 
     hc::AmPointerInfo devPtrInfo1(NULL, NULL, NULL, 0, default_acc, 0, 0);
     hc::AmPointerInfo devPtrInfo2(NULL, NULL, NULL, 0, default_acc, 0, 0);
