@@ -1,7 +1,7 @@
 ## hc::accelerator_view, overlapping transfers and computation, device-to-device DMA transfers.
 ### Initial experiments.
 
-Messy code lives here, full with traces of earlier version, unused variable, etc. Code will be sanitized and commented soon.
+Messy code lives here, full with traces of earlier version, unused variables, etc. Code will be sanitized and commented soon.
 
 ### Some quick observations
 
