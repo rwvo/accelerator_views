@@ -23,10 +23,10 @@ Messy code lives here, full with traces of earlier version, unused variable, etc
   and the target pointer are allocated with `am_alloc`. Big shout-out to Scott Moe for discovering that! That's somewhat
   unfortunate if you want to use `hc::array` to represent data on the device. Fortunately, there is an ``hc::array``
   constructor that takes a raw pointer to already `am_alloc`-ed memory, as is shown in the code examples. Unfortunately,
-  the array doesn't take ownership of the memory; you have to delete it yourself, the array doesn't do it when its
-  lifetime end. That can be a rich source of bugs in larger codes with complicated code paths, but it should be possible
-  to wrap the am_alloced pointer in a `std::unique_ptr` or a `std::shared_pointer`, and provide a custom deleter,
-  similar to how hc::pinned_vector handles am_alloced host-pinned memory. I'll provide some examples in a next iteration.
+  the array doesn't take ownership of the memory; you have to delete it yourself. That can be a rich source of bugs in
+  larger codes with complicated code paths, but it should be possible to wrap the am_alloced pointer in a
+  `std::unique_ptr` or a `std::shared_pointer`, and provide a custom deleter, similar to how `hc::pinned_vector` handles
+  am_alloced host-pinned memory. I'll provide some examples in a next iteration.
 
 
 ### Overlapping transfers/computations on two accelerator_views
@@ -40,7 +40,8 @@ resulting in all 1.0 values in both arrays on the device, copies the results bac
 Commenting out the `acc_view1.wait()` between the work on the two queues results in a total time for sequential execution.
 
 This code does not test for overlap of transfer on the one hand, and computation on the other hand. Instead, it tests
-overlap of two independent transfer-compute-transfer sequences.
+overlap of two independent transfer-compute-transfer sequences. Testing the former is not hard, and I'll get to that
+soon.
 
 ### DMA transfers between two GPU devices.
 
@@ -50,13 +51,14 @@ magic for avoiding segfault/core dumps is a call to `hc::am_map_to_peers`. First
 mapped to other accelerators. Third arg: pointer/array of `hc::accelerators` to which the pointer needs to be
 mapped. Second arg: number of accelerators in third arg.
 
-Fill host array with multiple copies of Pi, copy to device 1, copy from device 1 to device 2, copy from device 2 to
-host, check that the average value in the resulting host array is still Pi.
+Current code example fills host array with multiple copies of Pi, copies from host to device 1, then from device 1 to
+device 2, and finally from device 2 to host. After all the transfers, the code checks if the average value in the
+resulting host array is still Pi.
 
-In the current version, I do a `wait()` on all copies, to see the individual times. This appears to also properly
+In the current version, I do a `wait()` on all copies, to measure the individual times. This appears to also properly
 synchronize between the devices: device2 should not start the copy back to the host before device1 finishes the copy to
 device2, and device2 can actually see the results. A better way of synchronization using markers is shown in a unit test
-of the ROCm source code: `hcc/tests/Unit/AcceleratorViewCopy/copy_coherency.cpp`, search for `am_map_to_peers`.
+of the ROCm source code: see `hcc/tests/Unit/AcceleratorViewCopy/copy_coherency.cpp`, search for `am_map_to_peers`.
 
 Tested it on a P47 system (EPIC with 4 MI25 GPUs), and the device-to-device transfer doesn't give stellar performance yet:
 
@@ -68,5 +70,6 @@ acc_view2.copy_async(device_data2.accelerator_pointer(), host_data2.data(), size
 
 From these number, it looks like a copy from device1 to host, and from host to device2, should be faster than the direct
 copy from device1 to device2, which is dissapointing. `copy_async_ext` did not result in better performance. But at
-least we went from a copy operation that crashes fast to one that succeeds somewhat slowly.
+least we went from a copy operation that crashes fast to one that succeeds somewhat slowly. We should be able to get
+better results; I have some ideas already.
 
