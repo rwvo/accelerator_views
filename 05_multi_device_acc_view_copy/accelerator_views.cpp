@@ -16,10 +16,11 @@ constexpr size_t operator"" _GiB(unsigned long long GiB){ return GiB * 1024 * 10
     float tm;								\
     {									\
       SystemTimer timer(tm);						\
+      std::wcerr << #fun_call << ": ";					\
       fun_call;								\
     }									\
     auto GiB = 1.0 * size * sizeof(double) / (1024 * 1024 * 1024);	\
-    std::wcerr << #fun_call << ": " << tm << " seconds, " << GiB/tm << "GiB/s\n"; \
+    std::wcerr << tm << " seconds, " << GiB/tm << "GiB/s\n"; \
   }
 
 void show_accelerators(const std::vector<hc::accelerator>& accelerators){
@@ -70,11 +71,21 @@ int main(){
     auto device_data1 = hc::array<double, 1>(extent<1>(size), acc_view1, device_ptr1);
     auto device_data2 = hc::array<double, 1>(extent<1>(size), acc_view2, device_ptr2);
 
+    hc::AmPointerInfo devPtrInfo1(NULL, NULL, NULL, 0, acc1, 0, 0);
+    hc::AmPointerInfo devPtrInfo2(NULL, NULL, NULL, 0, acc2, 0, 0);
+    bool inTracker1 = hc::am_memtracker_getinfo(&devPtrInfo1, device_ptr1) == AM_SUCCESS;
+    bool inTracker2 = hc::am_memtracker_getinfo(&devPtrInfo2, device_ptr2) == AM_SUCCESS;
+
+    std::wcerr << "inTracker1: " << inTracker1 << ", inTracker2: " << inTracker2 << "\n";
+
     std::wcerr << "Copying from host -> device " << devno1 << " -> device " << devno2 << " -> host:\n";
     
     SHOW_TIME(acc_view1.copy_async(host_data1.data(), device_data1.accelerator_pointer(), size * sizeof(double)).wait());
-    SHOW_TIME(acc_view1.copy_async(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
-				   size * sizeof(double)).wait());
+    // SHOW_TIME(acc_view1.copy_async(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
+    //                                size * sizeof(double)).wait());
+    SHOW_TIME(acc_view1.copy_async_ext(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
+				       size * sizeof(double), hcMemcpyDeviceToDevice,
+				       devPtrInfo1, devPtrInfo2, &acc1).wait());
     SHOW_TIME(acc_view2.copy_async(device_data2.accelerator_pointer(), host_data2.data(), size * sizeof(double)).wait());
     
     auto average2 = std::accumulate(host_data2.begin(), host_data2.end(), 0.0) / size;
