@@ -59,16 +59,15 @@ int main(){
     }
 
     auto devno1 = devices.front();
-    auto devno2 = devices.back();
+    auto devno2 = devices.back(); // if there's only one GPU, front and back are the same device.
 
-    auto acc0 = accelerators[0];
     auto acc1 = accelerators[devno1];
     auto acc2 = accelerators[devno2];
-    auto acc_view0 = acc0.create_view();
+
     auto acc_view1 = acc1.create_view();
     auto acc_view2 = acc2.create_view();
     
-    pinned_vector<double> host_data1(size, 3.1415927); // host pinned memory, alloc-ed with am_alloc, zero-initialized
+    pinned_vector<double> host_data1(size, 3.1415927); // host pinned memory, alloc-ed with am_alloc, all values initialized to Pi
     pinned_vector<double> host_data2(size); 
     auto device_ptr1 = hc::am_alloc(size * sizeof(double), acc1, 0);
     auto device_ptr2 = hc::am_alloc(size * sizeof(double), acc2, 0);
@@ -86,7 +85,7 @@ int main(){
     SHOW_TIME(acc_view2.copy_async(device_data2.accelerator_pointer(), host_data2.data(), size * sizeof(double)).wait());
     
     auto average2 = std::accumulate(host_data2.begin(), host_data2.end(), 0.0) / size;
-    std::wcerr << "average2: " << average2 << '\n';
+    std::wcerr << "average2: " << average2 << '\n'; // expected value: 3.1415927
     
     am_free(device_ptr1);
     am_free(device_ptr2);
