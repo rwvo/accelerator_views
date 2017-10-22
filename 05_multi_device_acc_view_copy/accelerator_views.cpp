@@ -49,6 +49,7 @@ int main(){
   {
     SystemTimer timer(tm);
     constexpr size_t size = 1_GiB;
+    hc::accelerator default_acc;
     auto accelerators = accelerator::get_all();
     auto devices = get_devices(accelerators);
     std::wcerr << "number of GPU devices: " << devices.size() << "\n\n";
@@ -72,8 +73,8 @@ int main(){
     auto device_data1 = hc::array<double, 1>(extent<1>(size), acc_view1, device_ptr1);
     auto device_data2 = hc::array<double, 1>(extent<1>(size), acc_view2, device_ptr2);
 
-    hc::AmPointerInfo devPtrInfo1(NULL, NULL, NULL, 0, acc1, 0, 0);
-    hc::AmPointerInfo devPtrInfo2(NULL, NULL, NULL, 0, acc2, 0, 0);
+    hc::AmPointerInfo devPtrInfo1(NULL, NULL, NULL, 0, default_acc, 0, 0);
+    hc::AmPointerInfo devPtrInfo2(NULL, NULL, NULL, 0, default_acc, 0, 0);
     bool inTracker1 = hc::am_memtracker_getinfo(&devPtrInfo1, device_ptr1) == AM_SUCCESS;
     bool inTracker2 = hc::am_memtracker_getinfo(&devPtrInfo2, device_ptr2) == AM_SUCCESS;
 
@@ -86,9 +87,9 @@ int main(){
     //                                size * sizeof(double)));
     SHOW_TIME(acc_view1.wait());
     try {
-      SHOW_TIME(acc_view1.copy_async_ext(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
-					 size * sizeof(double), hcMemcpyDeviceToDevice,
-					 devPtrInfo1, devPtrInfo2, &acc1));
+      SHOW_TIME(acc_view1.copy_ext(device_data1.accelerator_pointer(), device_data2.accelerator_pointer(),
+				   size * sizeof(double), hcMemcpyDeviceToDevice,
+				   devPtrInfo1, devPtrInfo2, &acc1, false));
       SHOW_TIME(acc_view1.wait());
     }
     catch(std::exception& e){
