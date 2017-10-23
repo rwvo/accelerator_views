@@ -37,8 +37,8 @@ Messy code lives here, full with traces of earlier version, unused variables, et
   start of the contained data, which makes `array::data()` very confusing to me.
 
 * Speaking of `std::vector::data()`: if you use a `std::vector` as a source or target with
-  `accelerator_view::copy_async()`, then (a) it should be an `hc::pinned_vector` (which is a std::vector that uses
-  `am_alloc` for memory allocation), and (b) use the `pinned_vector::data()` member function to get a pointer for
+  `accelerator_view::copy_async()`, then **(a)** it should be an `hc::pinned_vector` (which is a std::vector that uses
+  `am_alloc` for memory allocation), and **(b)** use the `pinned_vector::data()` member function to get a pointer for
   consumption by `accelerator_view::copy_async()`, if you care about performace. `pinned_vector::begin()` works too, but
   it is much slower. I always think of `begin()` as a pointer to the first element in the vector, but it is actually a
   `std::vector::iterator`. Apparently, `accelerator_view::copy_async()` has an overload that takes an iterator, and gets
