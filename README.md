@@ -28,6 +28,23 @@ Messy code lives here, full with traces of earlier version, unused variables, et
   `std::unique_ptr` or a `std::shared_pointer`, and provide a custom deleter, similar to how `hc::pinned_vector` handles
   am_alloced host-pinned memory. I'll provide some examples in a next iteration.
 
+* `accelerator_view::copy_async()` has three arguments: a source pointer, a destination pointer, and a size in bytes. If
+  you need to do a copy from/to an `hc::array` (only works if you `am_alloc`-ed the memory; see above), you can get the
+  pointer to the device data with the `hc::array::accelerator_pointer()` member function. There is also an
+  `hc:array::data()` member function, which also gives a pointer, but it's a different one, and it's unclear to me what
+  this pointer points to, and it doesn't work with `accelerator_view::copy_async()`. The doxygen documentation for both
+  functions is very similar. Note that for `std::vector`, the `data()` member function *does* return a pointer to the
+  start of the contained data, which makes `array::data()` very confusing to me.
+
+* Speaking of `std::vector::data()`: if you use a `std::vector` as a source or target with
+  `accelerator_view::copy_async()`, then (a) it should be an `hc::pinned_vector` (which is a std::vector that uses
+  `am_alloc` for memory allocation), and (b) use the `pinned_vector::data()` member function to get a pointer for
+  consumption by `accelerator_view::copy_async()`, if you care about performace. `pinned_vector::begin()` works too, but
+  it is much slower. I always think of `begin()` as a pointer to the first element in the vector, but it is actually a
+  `std::vector::iterator`. Apparently, `accelerator_view::copy_async()` has an overload that takes an iterator, and gets
+  the data out of the vector by repeatedly incrementing the iterator, and/or uses some unnecessary (in the case of
+  `std::vector`) buffering as part of the copy process.
+
 
 ### Overlapping transfers/computations on two accelerator_views
 
