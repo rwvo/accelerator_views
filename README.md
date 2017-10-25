@@ -1,7 +1,10 @@
 ## hc::accelerator_view, overlapping transfers and computation, device-to-device DMA transfers.
 ### Initial experiments.
 
-Messy code lives here, full with traces of earlier version, unused variables, etc. Code will be sanitized and commented soon.
+Messy code lives here, full with traces of earlier version, unused variables, etc. Code will be sanitized and commented
+soon. Examples 00-02 show what *not* to do, and may result in crashes or segfaults. Examples 04 and 05 should work, and
+they are described below. I think example 03 should work, but I forgot what the point of the example was; will be
+updated.
 
 ### Some quick observations
 
